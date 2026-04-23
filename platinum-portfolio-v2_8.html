@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLATINUMFX — GAME DIRECTOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-top: #0a0a0a;
+    --bg-mid: #1a1a1a;
+    --bg-bot: #050505;
+    --ink: #f2f2f2;
+    --silver: #c8c8c8;
+    --muted: #6b6b6b;
+    --line: rgba(242, 242, 242, 0.15);
+    --line-strong: rgba(242, 242, 242, 0.35);
+    --accent: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background:
+      radial-gradient(ellipse at top, #1f1f1f 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, #0a0a0a 0%, transparent 50%),
+      linear-gradient(180deg, #0a0a0a 0%, #151515 50%, #050505 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    cursor: none;
+    min-height: 100vh;
+  }
+
+  /* Subtle silver shimmer texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.03) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.02) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 1000;
+    mix-blend-mode: overlay;
+  }
+
+  /* Cursor */
+  .cursor {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--ink);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    transition: width 0.25s, height 0.25s;
+    transform: translate(-50%, -50%);
+  }
+  .cursor.grow { width: 60px; height: 60px; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 32px;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0) 100%);
+    backdrop-filter: blur(10px);
+  }
+  nav .logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #fff 0%, #888 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  nav .logo .italic { font-style: italic; font-weight: 400; }
+  nav .meta {
+    display: flex;
+    gap: 28px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--silver);
+  }
+  nav .meta .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: #0eff8e;
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px #0eff8e;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  nav .meta .dot.busy {
+    background: #ff3d3d;
+    box-shadow: 0 0 10px #ff3d3d;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    padding: 120px 32px 60px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 40px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .hero-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    color: var(--silver);
+  }
+  .hero-label::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--silver);
+  }
+
+  .hero-coords {
+    text-align: right;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .hero-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    gap: 32px;
+  }
+
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(68px, 14vw, 220px);
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+    width: 100%;
+  }
+  .hero-title .word {
+    display: block;
+    overflow: hidden;
+  }
+  .hero-title .word span {
+    display: inline-block;
+    background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation:
+      rise 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+      drift 5s ease-in-out 1.5s infinite;
+  }
+  .hero-title .word:nth-child(1) span { animation-delay: 0s, 1.5s; }
+  .hero-title .word:nth-child(2) span { animation-delay: 0.08s, 1.6s; }
+  .hero-title .word:nth-child(3) span { animation-delay: 0.16s, 1.7s; }
+  .hero-title .word:nth-child(4) span { animation-delay: 0.24s, 1.8s; }
+  .hero-title .italic { font-style: italic; font-weight: 400; }
+  .hero-title .period {
+    color: #0eff8e;
+    -webkit-text-fill-color: #0eff8e;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes rise {
+    from { transform: translateY(110%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .hero-subtitle {
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    width: 100%;
+    max-width: 600px;
+  }
+  .hero-subtitle-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--silver);
+  }
+
+  /* AVAILABILITY TOGGLE */
+  .availability-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px 10px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 100px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: none;
+    transition: background 0.3s, border-color 0.3s, transform 0.3s;
+    user-select: none;
+    align-self: flex-start;
+  }
+  .availability-toggle:hover {
+    background: rgba(0,0,0,0.6);
+    border-color: var(--silver);
+    transform: translateY(-1px);
+  }
+  .availability-light {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #0eff8e;
+    box-shadow: 0 0 12px #0eff8e, 0 0 24px rgba(14, 255, 142, 0.4);
+    animation: blink 1.5s ease-in-out infinite;
+    transition: background 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+  }
+  .availability-toggle.busy .availability-light {
+    background: #ff3d3d;
+    box-shadow: 0 0 12px #ff3d3d, 0 0 24px rgba(255, 61, 61, 0.4);
+  }
+  @keyframes blink {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.85);
+    }
+  }
+  .availability-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1;
+  }
+  .availability-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .availability-toggle.busy .availability-status {
+    color: #ff3d3d;
+  }
+  .availability-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+  }
+
+  .hero-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 40px;
+    align-items: end;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+
+  .hero-bio {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 380px;
+    color: var(--silver);
+    grid-column: span 1;
+  }
+
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hero-stat-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 64px;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    background: linear-gradient(180deg, #ffffff 0%, #999999 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-stat-num .italic { font-style: italic; font-weight: 400; }
+  .hero-stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* COLLABORATORS STRIP */
+  .collabs {
+    padding: 40px 32px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    z-index: 2;
+  }
+  .collabs-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .collabs-label::before, .collabs-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .collabs-grid {
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  }
+  .collab-track {
+    display: flex;
+    width: max-content;
+    animation: collab-scroll 40s linear infinite;
+  }
+  .collabs-grid:hover .collab-track {
+    animation-play-state: paused;
+  }
+  @keyframes collab-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .collab-cell {
+    flex: 0 0 auto;
+    width: 260px;
+    height: 130px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--silver);
+    transition: background 0.4s, color 0.4s, filter 0.4s, transform 0.4s;
+    position: relative;
+    filter: grayscale(100%) brightness(0.9);
+  }
+  .collab-cell:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--ink);
+    filter: grayscale(0%) brightness(1);
+    transform: scale(1.05);
+  }
+  .collab-cell .italic { font-style: italic; font-weight: 400; }
+  .collab-cell img {
+    max-width: 75%;
+    max-height: 65%;
+    object-fit: contain;
+  }
+
+  /* SECTIONS */
+  .section {
+    padding: 100px 32px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    z-index: 2;
+  }
+
+  .section-header {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 32px;
+    align-items: baseline;
+    margin-bottom: 60px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-num {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(40px, 6vw, 88px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-title .italic { font-style: italic; font-weight: 400; }
+  .section-meta {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* FEATURED GAMES */
+  .featured {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  .featured-card {
+    padding: 48px 32px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+    display: block;
+  }
+  .featured-card:nth-child(2n) { border-right: none; }
+  .featured-card:hover {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  }
+
+  .featured-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-right: 60px;
+  }
+  .featured-label .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(14, 255, 142, 0.4);
+    border-radius: 100px;
+    color: #0eff8e;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    white-space: nowrap;
+  }
+  .featured-label .live::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #0eff8e;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #0eff8e;
+    animation: pulse 2s infinite;
+  }
+
+  .featured-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+    color: var(--ink);
+  }
+  .featured-title .italic { font-style: italic; font-weight: 400; }
+  .featured-nums {
+    display: flex;
+    gap: 56px;
+    margin-bottom: 32px;
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .featured-num strong {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(56px, 6vw, 88px);
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    display: block;
+    background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .featured-num span {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-top: 10px;
+    display: block;
+  }
+  .featured-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 420px;
+    color: var(--silver);
+  }
+  .featured-arrow {
+    position: absolute;
+    top: 32px;
+    right: 32px;
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    color: var(--silver);
+    transition: transform 0.4s;
+  }
+  .featured-card:hover .featured-arrow { transform: translateX(8px) translateY(-8px); }
+
+  /* REVENUE CHART - hover reveal on Dinosaur Racing card */
+  .rev-chart {
+    margin-top: 24px;
+    padding: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition:
+      max-height 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s ease 0.1s,
+      padding 0.5s ease,
+      margin-top 0.5s ease;
+    border-top: 1px solid transparent;
+  }
+  .has-chart:hover .rev-chart,
+  .has-chart:focus-within .rev-chart {
+    max-height: 600px;
+    opacity: 1;
+    padding-top: 24px;
+    margin-top: 28px;
+    border-top-color: var(--line);
+  }
+  .rev-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .rev-chart-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .rev-chart-info {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .rev-chart-period {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .rev-chart-stats {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 20px;
+  }
+  .rev-chart-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .rev-chart-stat-val {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rev-chart-stat-val .robux-icon {
+    width: 24px;
+    height: auto;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .rev-chart-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: rgba(14, 255, 142, 0.15);
+    border: 1px solid rgba(14, 255, 142, 0.4);
+    border-radius: 4px;
+    color: #0eff8e;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .rev-chart-graph {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 12px;
+    margin-bottom: 14px;
+  }
+  .rev-chart-graph svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .rev-chart-graph .rev-line {
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+  }
+  .has-chart:hover .rev-chart-graph .rev-line {
+    animation: draw-line 2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  }
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+  .has-chart:hover .rev-chart-graph .rev-area {
+    animation: fade-area 1.5s ease 1s forwards;
+    opacity: 0;
+  }
+  @keyframes fade-area {
+    to { opacity: 1; }
+  }
+  .rev-chart-graph circle { opacity: 0; }
+  .has-chart:hover .rev-chart-graph circle {
+    animation: fade-in-circle 0.6s ease 2.1s forwards;
+  }
+  @keyframes fade-in-circle {
+    to { opacity: 1; }
+  }
+  .rev-chart-graph circle:last-of-type {
+    animation-name: fade-in-halo;
+  }
+  @keyframes fade-in-halo {
+    to { opacity: 0.2; }
+  }
+  .rev-chart-caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* THUMBNAIL PERFORMANCE TABLE - Aura Ascension hover reveal */
+  .thumb-table {
+    margin-top: 24px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition:
+      max-height 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.5s ease 0.1s,
+      padding 0.5s ease,
+      margin-top 0.5s ease;
+    border-top: 1px solid transparent;
+  }
+  .has-thumb-table:hover .thumb-table,
+  .has-thumb-table:focus-within .thumb-table {
+    max-height: 900px;
+    opacity: 1;
+    padding-top: 24px;
+    margin-top: 28px;
+    border-top-color: var(--line);
+  }
+  .thumb-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .thumb-table-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .thumb-table-period {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-left: 8px;
+    font-weight: 400;
+  }
+  .thumb-table-grid {
+    display: grid;
+    grid-template-columns: 82px 84px 1fr 1fr 1fr 0.8fr;
+    gap: 0;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .thumb-col-head {
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,0.02);
+  }
+  .thumb-col-head.num-col { text-align: right; }
+  .thumb-row {
+    display: contents;
+  }
+  .thumb-row > div {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--silver);
+    transition: background 0.3s;
+  }
+  .thumb-row:last-child > div { border-bottom: none; }
+  .thumb-row:hover > div { background: rgba(255,255,255,0.03); }
+  .thumb-row .num-col { justify-content: flex-end; }
+  .thumb-row.total-row > div {
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .thumb-row.total-row .total-label {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .thumb-row.total-row .thumb-val {
+    color: var(--ink);
+  }
+  .thumb-val .big {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .thumb-val small {
+    font-size: 9px;
+    color: var(--muted);
+    margin-left: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .active-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 7px;
+    background: rgba(14, 255, 142, 0.1);
+    border: 1px solid rgba(14, 255, 142, 0.3);
+    border-radius: 3px;
+    color: #0eff8e;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .thumb-preview {
+    position: relative;
+    width: 58px;
+    height: 32px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .thumb-swatch {
+    position: absolute;
+    inset: 0;
+    border-radius: 3px;
+  }
+  .thumb-red,
+  .thumb-purple,
+  .thumb-split,
+  .thumb-orange,
+  .thumb-fire {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+  }
+  .thumb-label-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 9px;
+    color: var(--silver);
+    letter-spacing: 0.02em;
+    z-index: 2;
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  .qptr-best {
+    color: #0eff8e !important;
+    font-weight: 600;
+  }
+  .qptr-best .big { color: #0eff8e; }
+  .qptr-good {
+    color: #a8e5c2 !important;
+  }
+  .qptr-good .big { color: #a8e5c2; }
+
+  .thumb-caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 14px;
+  }
+
+  /* Animate table rows drawing in on hover */
+  .has-thumb-table .thumb-row > div {
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .has-thumb-table:hover .thumb-row > div {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .has-thumb-table:hover .thumb-row:nth-child(2) > div { transition-delay: 0.2s; }
+  .has-thumb-table:hover .thumb-row:nth-child(3) > div { transition-delay: 0.3s; }
+  .has-thumb-table:hover .thumb-row:nth-child(4) > div { transition-delay: 0.4s; }
+  .has-thumb-table:hover .thumb-row:nth-child(5) > div { transition-delay: 0.5s; }
+  .has-thumb-table:hover .thumb-row:nth-child(6) > div { transition-delay: 0.6s; }
+  .has-thumb-table:hover .thumb-row:nth-child(7) > div { transition-delay: 0.7s; }
+
+  /* GAMES LIST */
+  .games { margin-top: 60px; }
+  .game {
+    display: grid;
+    grid-template-columns: 60px 2fr 1fr 1fr 1fr 80px;
+    gap: 24px;
+    align-items: center;
+    padding: 28px 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+    transition: padding 0.4s;
+  }
+  .game:last-child { border-bottom: 1px solid var(--line); }
+  .game::before {
+    content: '';
+    position: absolute;
+    inset: 0 -16px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: -1;
+  }
+  .game:hover::before { transform: scaleX(1); }
+  .game:hover { padding-left: 16px; }
+
+  .game-num {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .game-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .game-title .italic { font-style: italic; }
+
+  .game-stat-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 36px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    background: linear-gradient(180deg, #ffffff 0%, #999999 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .game-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .game-role {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  .game-arrow {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    text-align: right;
+    color: var(--silver);
+    transition: transform 0.4s, color 0.4s;
+  }
+  .game:hover .game-arrow {
+    transform: translateX(12px);
+    color: var(--ink);
+  }
+
+  /* LIVEOPS IMPACT */
+  .liveops-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    padding: 60px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .liveops-hero:last-of-type { border-bottom: none; }
+
+  .liveops-big {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(100px, 18vw, 260px);
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    background: linear-gradient(180deg, #ffffff 0%, #555555 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .liveops-big .italic { font-style: italic; font-weight: 400; }
+  .liveops-big sup {
+    font-size: 0.3em;
+    vertical-align: top;
+    font-weight: 400;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0;
+  }
+
+  .liveops-desc {
+    padding-top: 40px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--silver);
+  }
+  .liveops-desc strong {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 22px;
+    display: block;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+
+  /* AUDIT SECTION */
+  .audit {
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 60px 48px;
+    background:
+      radial-gradient(ellipse at top right, rgba(255,255,255,0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #151515 0%, #080808 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .audit::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .audit-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 60px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .audit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--silver);
+    border-radius: 100px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 24px;
+    color: var(--silver);
+  }
+  .audit-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #0eff8e;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #0eff8e;
+  }
+
+  .audit-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(44px, 6vw, 80px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .audit-title .italic { font-style: italic; font-weight: 400; }
+
+  .audit-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--silver);
+    margin-bottom: 32px;
+    max-width: 520px;
+  }
+
+  .audit-list {
+    list-style: none;
+    margin-bottom: 32px;
+  }
+  .audit-list li {
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--silver);
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 16px;
+  }
+  .audit-list li:last-child { border-bottom: 1px solid var(--line); }
+  .audit-list li::before {
+    content: '→';
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+  }
+
+  .audit-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 32px;
+    background: linear-gradient(180deg, #ffffff 0%, #d8d8d8 100%);
+    color: var(--bg-top);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: none;
+    border-radius: 4px;
+    cursor: none;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0);
+  }
+  .audit-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -10px rgba(255,255,255,0.3);
+  }
+
+  .audit-price {
+    padding: 40px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    background: rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .audit-price-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .audit-price-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .audit-price-robux {
+    width: 56px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(255,255,255,0.15));
+  }
+  .audit-price-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 96px;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    background: linear-gradient(180deg, #ffffff 0%, #666666 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .audit-price-alt {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .audit-price-alt strong {
+    color: var(--ink);
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .audit-price-sub {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .audit-price-sub strong {
+    display: block;
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  /* SKILLS */
+  .about-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  .skill-block {
+    padding: 48px 32px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transition: background 0.4s;
+  }
+  .skill-block:nth-child(3n) { border-right: none; }
+  .skill-block:hover { background: rgba(255,255,255,0.03); }
+
+  .skill-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 96px;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #555555 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .skill-num .italic { font-style: italic; font-weight: 400; }
+  .skill-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .skill-desc {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .addl {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    margin-top: 60px;
+    border-top: 1px solid var(--line);
+  }
+  .addl-block {
+    padding: 36px 32px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    transition: background 0.4s;
+    display: block;
+    position: relative;
+  }
+  .addl-block:nth-child(3n) { border-right: none; }
+  .addl-block:hover { background: rgba(255,255,255,0.04); }
+  .addl-block.clickable::after {
+    content: '↗';
+    position: absolute;
+    top: 32px;
+    right: 32px;
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    color: var(--silver);
+    transition: transform 0.4s;
+  }
+  .addl-block.clickable:hover::after {
+    transform: translate(4px, -4px);
+  }
+  .addl-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+  .addl-link {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .addl-desc {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  /* REVIEWS */
+  .reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  .review {
+    padding: 48px 32px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    transition: background 0.4s;
+  }
+  .review:nth-child(2n) { border-right: none; }
+  .review:hover { background: rgba(255,255,255,0.03); }
+  .review-stars {
+    color: var(--ink);
+    font-size: 14px;
+    letter-spacing: 0.2em;
+  }
+  .review-quote {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    flex: 1;
+  }
+  .review-quote::before { content: '"'; font-size: 1.2em; }
+  .review-quote::after { content: '"'; }
+  .review-author {
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .review-author strong {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .review-author span {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 100px 32px 40px;
+    background: linear-gradient(180deg, #050505 0%, #000000 100%);
+    border-top: 1px solid var(--line-strong);
+    position: relative;
+    z-index: 2;
+  }
+  .footer-big {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(80px, 15vw, 220px);
+    line-height: 0.82;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+    margin-bottom: 80px;
+    background: linear-gradient(180deg, #ffffff 0%, #555555 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .footer-big .italic { font-style: italic; font-weight: 400; }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+    margin-bottom: 60px;
+  }
+  .footer-col h4 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+  .footer-col a, .footer-col span {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    margin-bottom: 8px;
+    transition: transform 0.3s, color 0.3s;
+    color: var(--silver);
+  }
+  .footer-col a:hover { transform: translateX(8px); color: var(--ink); }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    body { cursor: auto; }
+    .cursor { display: none; }
+    .hero-top, .hero-bottom, .liveops-hero, .audit-grid { grid-template-columns: 1fr; }
+    .hero-coords { text-align: left; }
+    .hero-bottom { gap: 20px; }
+    .hero-main { flex-direction: column; align-items: stretch; gap: 32px; }
+    .hero-tagline { position: static; max-width: 100%; }
+    .section-header { grid-template-columns: 1fr; gap: 16px; }
+    .game { grid-template-columns: 30px 1fr 60px; gap: 16px; padding: 20px 0; }
+    .game-title { font-size: 20px; }
+    .game .game-stat-num + .game-stat-label, .game-role { display: none; }
+    .game > div:nth-child(3), .game > div:nth-child(4), .game > div:nth-child(5) { display: none; }
+    .featured { grid-template-columns: 1fr; }
+    .featured-card { border-right: none; padding: 32px 20px; }
+    .featured-label { padding-right: 50px; }
+    .about-grid, .addl, .reviews-grid { grid-template-columns: 1fr; }
+    .skill-block, .addl-block, .review { border-right: none; padding: 32px 20px; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .collab-cell { width: 180px; height: 100px; font-size: 20px; }
+    nav { padding: 16px 20px; }
+    nav .meta { display: none; }
+    .section { padding: 60px 20px; }
+    .hero { padding: 100px 20px 40px; }
+    .audit { padding: 40px 24px; }
+    footer { padding: 60px 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<nav>
+  <div class="logo">PL4TINUM<span class="italic">®</span></div>
+  <div class="meta">
+    <span class="nav-status"><span class="dot" id="navDot"></span><span id="navStatusText">TAKING AUDITS</span></span>
+    <a href="#games">WORK</a>
+    <a href="#audit">AUDIT</a>
+    <a href="#contact">CONTACT</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-top">
+    <div class="hero-label">GAME DIRECTOR / ROBLOX</div>
+    <div class="hero-coords">
+      LAGOS, NIGERIA<br>
+      06.4541° N, 03.3947° E<br>
+      EST. 2024 — PRESENT
+    </div>
+  </div>
+
+  <div class="hero-main">
+    <div class="availability-toggle" id="availabilityToggle" role="button" tabindex="0" aria-label="Toggle availability status">
+      <div class="availability-light"></div>
+      <div class="availability-text">
+        <div class="availability-status">AVAILABLE</div>
+        <div class="availability-hint">Click to toggle</div>
+      </div>
+    </div>
+
+    <h1 class="hero-title">
+      <div class="word"><span>LET YOUR</span></div>
+      <div class="word"><span class="italic">game</span></div>
+      <div class="word"><span>RULE THE</span></div>
+      <div class="word"><span class="italic">globe<span class="period">.</span></span></div>
+    </h1>
+
+    <div class="hero-subtitle">
+      <div class="hero-subtitle-mono">Platinumeffects [RTG] / Game Director / Roblox</div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="hero-bio">
+      Game Director shipping and scaling Roblox games at BlockTurns, a studio with 10M+ group members. I lead dev teams across scripting, modelling, UI, VFX, and animation. Turn low-revenue games into consistent earners.
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num"><span class="count" data-target="162" data-suffix="M+">0</span></div>
+      <div class="hero-stat-label">Total Visits Shipped</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num"><span class="count" data-target="83" data-suffix="K">0</span></div>
+      <div class="hero-stat-label">Peak Concurrent Players</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num"><span class="count" data-target="10" data-suffix="×">0</span></div>
+      <div class="hero-stat-label">Revenue Growth Record</div>
+    </div>
+  </div>
+</section>
+
+<!-- COLLABORATORS -->
+<section class="collabs">
+  <div class="collabs-label">Studios & Collaborators</div>
+  <div class="collabs-grid">
+    <div class="collab-track">
+      <div class="collab-cell">BlockTurns</div>
+      <div class="collab-cell"><span class="italic">Chronix</span></div>
+      <div class="collab-cell">Kio & So</div>
+      <div class="collab-cell">Spiral</div>
+      <div class="collab-cell">CubeGfx</div>
+      <div class="collab-cell"><span class="italic">Gamr</span></div>
+      <div class="collab-cell">RTG DEVS</div>
+      <div class="collab-cell">QUATR</div>
+      <div class="collab-cell"><span class="italic">RTG Agency</span></div>
+      <div class="collab-cell">BUXIFY</div>
+      <div class="collab-cell">ccucheck</div>
+      <!-- Duplicate set for seamless loop -->
+      <div class="collab-cell">BlockTurns</div>
+      <div class="collab-cell"><span class="italic">Chronix</span></div>
+      <div class="collab-cell">Kio & So</div>
+      <div class="collab-cell">Spiral</div>
+      <div class="collab-cell">CubeGfx</div>
+      <div class="collab-cell"><span class="italic">Gamr</span></div>
+      <div class="collab-cell">RTG DEVS</div>
+      <div class="collab-cell">QUATR</div>
+      <div class="collab-cell"><span class="italic">RTG Agency</span></div>
+      <div class="collab-cell">BUXIFY</div>
+      <div class="collab-cell">ccucheck</div>
+    </div>
+  </div>
+</section>
+
+<!-- GAMES SECTION -->
+<section class="section" id="games">
+  <div class="section-header">
+    <div class="section-num">01 / WORK</div>
+    <h2 class="section-title">Selected <span class="italic">games</span></h2>
+    <div class="section-meta">12 Titles / Live</div>
+  </div>
+
+  <div class="featured">
+    <a href="https://www.roblox.com/games/77393318863643/Aura-Ascension" target="_blank" rel="noopener" class="featured-card has-thumb-table">
+      <div class="featured-label">
+        <span>01 — Flagship / Game Director</span>
+        <span class="live">LIVE</span>
+      </div>
+      <h3 class="featured-title">Aura <span class="italic">Ascension</span></h3>
+      <div class="featured-nums">
+        <div class="featured-num"><strong><span class="count" data-target="83" data-suffix="K+">0</span></strong><span>Peak CCU</span></div>
+        <div class="featured-num"><strong><span class="count" data-target="64.5" data-suffix="M+" data-decimal="1">0</span></strong><span>Visits</span></div>
+      </div>
+      <p class="featured-desc">Full progression system. 70 ranks, 7 map zones, suffix notation, F2P vs paid path balancing. Built the balancing spreadsheet covering monetisation, stacking, and zone multipliers. Resolved critical pacing issues through data analysis.</p>
+
+      <div class="thumb-table">
+        <div class="thumb-table-header">
+          <div class="thumb-table-title">Thumbnail Performance <span class="thumb-table-period">Mar 16 — Mar 23</span></div>
+        </div>
+
+        <div class="thumb-table-grid">
+          <div class="thumb-col-head">Status</div>
+          <div class="thumb-col-head">Thumbnail</div>
+          <div class="thumb-col-head num-col">Impressions</div>
+          <div class="thumb-col-head num-col">Qualified Plays</div>
+          <div class="thumb-col-head num-col">Avg Session</div>
+          <div class="thumb-col-head num-col">QPTR</div>
+
+          <div class="thumb-row total-row">
+            <div class="thumb-status"></div>
+            <div class="thumb-preview total-label">Total</div>
+            <div class="thumb-val num-col"><span class="big">5,091,527</span></div>
+            <div class="thumb-val num-col"><span class="big">118,313</span></div>
+            <div class="thumb-val num-col"><span class="big">16.7</span><small>min</small></div>
+            <div class="thumb-val num-col"><span class="big">2.32</span><small>%</small></div>
+          </div>
+
+          <div class="thumb-row">
+            <div class="thumb-status"><span class="active-pill">● Active</span></div>
+            <div class="thumb-preview">
+              <div class="thumb-swatch thumb-red"></div>
+              <div class="thumb-label-overlay">1998</div>
+            </div>
+            <div class="thumb-val num-col">613,714</div>
+            <div class="thumb-val num-col">18,977</div>
+            <div class="thumb-val num-col">17.9<small>min</small></div>
+            <div class="thumb-val num-col qptr-good">3.09<small>%</small></div>
+          </div>
+
+          <div class="thumb-row">
+            <div class="thumb-status"><span class="active-pill">● Active</span></div>
+            <div class="thumb-preview">
+              <div class="thumb-swatch thumb-purple"></div>
+              <div class="thumb-label-overlay">10</div>
+            </div>
+            <div class="thumb-val num-col">36,022</div>
+            <div class="thumb-val num-col">1,671</div>
+            <div class="thumb-val num-col">15.0<small>min</small></div>
+            <div class="thumb-val num-col qptr-best">4.64<small>%</small></div>
+          </div>
+
+          <div class="thumb-row">
+            <div class="thumb-status"><span class="active-pill">● Active</span></div>
+            <div class="thumb-preview">
+              <div class="thumb-swatch thumb-split"></div>
+              <div class="thumb-label-overlay">0 vs 9999</div>
+            </div>
+            <div class="thumb-val num-col">1,122,843</div>
+            <div class="thumb-val num-col">26,413</div>
+            <div class="thumb-val num-col">16.3<small>min</small></div>
+            <div class="thumb-val num-col">2.35<small>%</small></div>
+          </div>
+
+          <div class="thumb-row">
+            <div class="thumb-status"><span class="active-pill">● Active</span></div>
+            <div class="thumb-preview">
+              <div class="thumb-swatch thumb-orange"></div>
+              <div class="thumb-label-overlay">1+</div>
+            </div>
+            <div class="thumb-val num-col">1,730,158</div>
+            <div class="thumb-val num-col">41,483</div>
+            <div class="thumb-val num-col">16.1<small>min</small></div>
+            <div class="thumb-val num-col">2.40<small>%</small></div>
+          </div>
+
+          <div class="thumb-row">
+            <div class="thumb-status"><span class="active-pill">● Active</span></div>
+            <div class="thumb-preview">
+              <div class="thumb-swatch thumb-fire"></div>
+              <div class="thumb-label-overlay">+10M</div>
+            </div>
+            <div class="thumb-val num-col">216,602</div>
+            <div class="thumb-val num-col">4,482</div>
+            <div class="thumb-val num-col">17.1<small>min</small></div>
+            <div class="thumb-val num-col">2.07<small>%</small></div>
+          </div>
+        </div>
+
+        <div class="thumb-caption">Live A/B testing · Weekly rotation · Best performer: 4.64% QPTR</div>
+      </div>
+
+      <div class="featured-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/81773831771627/Dinosaur-Racing" target="_blank" rel="noopener" class="featured-card has-chart">
+      <div class="featured-label">
+        <span>02 — Revenue Rescue / LiveOps</span>
+        <span class="live">LIVE</span>
+      </div>
+      <h3 class="featured-title">Dinosaur <span class="italic">Racing</span></h3>
+      <div class="featured-nums">
+        <div class="featured-num"><strong><span class="count" data-target="10" data-suffix="×">0</span></strong><span>Rev Growth</span></div>
+        <div class="featured-num"><strong><span class="count" data-target="14.8" data-suffix="M+" data-decimal="1">0</span></strong><span>Visits</span></div>
+      </div>
+      <p class="featured-desc">Took daily revenue from 20K to 200K+ through targeted monetisation changes. Optimised gamepass pricing, devproduct funnels, and spending triggers. Highest-impact LiveOps project on my record.</p>
+
+      <div class="rev-chart">
+        <div class="rev-chart-header">
+          <div class="rev-chart-title">Daily Revenue <span class="rev-chart-info">ⓘ</span></div>
+          <div class="rev-chart-period">Aug 28 — Sep 23</div>
+        </div>
+
+        <div class="rev-chart-stats">
+          <div class="rev-chart-stat">
+            <div class="rev-chart-stat-label">Average over period</div>
+            <div class="rev-chart-stat-val"><img class="robux-icon" src="robux.svg" alt="Robux"> 27,700 <span class="rev-chart-badge">↑ &gt;1,000%</span></div>
+          </div>
+          <div class="rev-chart-stat">
+            <div class="rev-chart-stat-label">Total over period</div>
+            <div class="rev-chart-stat-val"><img class="robux-icon" src="robux.svg" alt="Robux"> 747,905</div>
+          </div>
+        </div>
+
+        <div class="rev-chart-graph">
+          <svg viewBox="0 0 800 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid lines -->
+            <g class="grid-lines" stroke="rgba(242,242,242,0.08)" stroke-dasharray="4 4" stroke-width="1">
+              <line x1="40" y1="30" x2="790" y2="30"/>
+              <line x1="40" y1="90" x2="790" y2="90"/>
+              <line x1="40" y1="150" x2="790" y2="150"/>
+              <line x1="40" y1="210" x2="790" y2="210"/>
+              <line x1="40" y1="270" x2="790" y2="270"/>
+            </g>
+
+            <!-- Y-axis labels -->
+            <g class="y-labels" fill="rgba(242,242,242,0.5)" font-family="JetBrains Mono, monospace" font-size="11">
+              <text x="8" y="34">120k</text>
+              <text x="8" y="94">100k</text>
+              <text x="8" y="154">80k</text>
+              <text x="8" y="214">40k</text>
+              <text x="8" y="274">20k</text>
+            </g>
+
+            <!-- Area fill under curve -->
+            <defs>
+              <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path class="rev-area" d="
+              M 50,300
+              L 50,300 L 75,298 L 100,299 L 125,278 L 150,285 L 175,293
+              L 200,275 L 225,263 L 250,263 L 275,271 L 300,243 L 325,242
+              L 350,273 L 375,273 L 400,273 L 425,269
+              L 450,240 L 475,180 L 500,200 L 525,208 L 550,212
+              L 575,163 L 600,133 L 625,100 L 650,60 L 675,40 L 700,88
+              L 700,300 Z
+            " fill="url(#revGrad)"/>
+
+            <!-- Main curve -->
+            <path class="rev-line" d="
+              M 50,300 L 75,298 L 100,299 L 125,278 L 150,285 L 175,293
+              L 200,275 L 225,263 L 250,263 L 275,271 L 300,243 L 325,242
+              L 350,273 L 375,273 L 400,273 L 425,269
+              L 450,240 L 475,180 L 500,200 L 525,208 L 550,212
+              L 575,163 L 600,133 L 625,100 L 650,60 L 675,40 L 700,88
+            " stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+
+            <!-- Peak point highlight -->
+            <circle cx="675" cy="40" r="7" fill="#0eff8e" stroke="#ffffff" stroke-width="2.5"/>
+            <circle cx="675" cy="40" r="14" fill="#0eff8e" opacity="0.2"/>
+
+            <!-- X-axis labels -->
+            <g fill="rgba(242,242,242,0.5)" font-family="JetBrains Mono, monospace" font-size="10">
+              <text x="42" y="318">Aug 28</text>
+              <text x="175" y="318">Sep 3</text>
+              <text x="305" y="318">Sep 9</text>
+              <text x="440" y="318">Sep 15</text>
+              <text x="575" y="318">Sep 19</text>
+              <text x="670" y="318">Sep 23</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="rev-chart-caption">Peak: 108K Robux / day · Rebuild shipped mid-Sep</div>
+      </div>
+
+      <div class="featured-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/112395383578247/Scroll-a-Brainrot" target="_blank" rel="noopener" class="featured-card">
+      <div class="featured-label">
+        <span>03 — Growth / Game Manager</span>
+        <span class="live">LIVE</span>
+      </div>
+      <h3 class="featured-title">Scroll a <span class="italic">Brainrot</span></h3>
+      <div class="featured-nums">
+        <div class="featured-num"><strong><span class="count" data-target="32.3" data-suffix="K+" data-decimal="1">0</span></strong><span>Peak CCU</span></div>
+        <div class="featured-num"><strong><span class="count" data-target="33" data-suffix="M+">0</span></strong><span>Visits</span></div>
+      </div>
+      <p class="featured-desc">Managed day-to-day operations, dev team output, and update scheduling for Kio & So. Consistent content delivery and quality standards across every patch cycle.</p>
+      <div class="featured-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/106438270823208/Steal-Money-From-Brainrots" target="_blank" rel="noopener" class="featured-card">
+      <div class="featured-label">
+        <span>04 — Thumbnail Flagship / Director</span>
+        <span class="live">LIVE</span>
+      </div>
+      <h3 class="featured-title">Steal <span class="italic">Money</span> From Brainrots</h3>
+      <div class="featured-nums">
+        <div class="featured-num"><strong><span class="count" data-target="6.1" data-suffix="K+" data-decimal="1">0</span></strong><span>Peak CCU</span></div>
+        <div class="featured-num"><strong><span class="count" data-target="6.1" data-suffix="M+" data-decimal="1">0</span></strong><span>Visits</span></div>
+      </div>
+      <p class="featured-desc">Directed every update, scripting priority, and feature rollout. Weekly thumbnail reworks with CubeGraphics drove millions of impressions. Full dev team pipeline across scripting, modelling, UI, and VFX.</p>
+      <div class="featured-arrow">↗</div>
+    </a>
+  </div>
+
+  <div class="games">
+    <a href="https://www.roblox.com/games/140527219068952/Color-a-Brainrot" target="_blank" rel="noopener" class="game">
+      <div class="game-num">05</div>
+      <div class="game-title">Color a <span class="italic">Brainrot</span></div>
+      <div><div class="game-stat-num">4.8K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">5.5M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/122154791687716/Escape-Traffic-For-Brainrots" target="_blank" rel="noopener" class="game">
+      <div class="game-num">06</div>
+      <div class="game-title">Escape Traffic For <span class="italic">Brainrots</span></div>
+      <div><div class="game-stat-num">9K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">8.5M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/101592778615412/1-Animal-Speed-Escape" target="_blank" rel="noopener" class="game">
+      <div class="game-num">07</div>
+      <div class="game-title">+1 Animal Speed <span class="italic">Escape</span></div>
+      <div><div class="game-stat-num">3.5K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">9M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/134901069199544/1-Dino-Speed-Escape" target="_blank" rel="noopener" class="game">
+      <div class="game-num">08</div>
+      <div class="game-title">+1 Dino Speed <span class="italic">Escape</span></div>
+      <div><div class="game-stat-num">3.7K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">4.2M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/80514178509844/Save-Brainrots-From-Traps" target="_blank" rel="noopener" class="game">
+      <div class="game-num">09</div>
+      <div class="game-title">Save Brainrots From <span class="italic">Traps</span></div>
+      <div><div class="game-stat-num">3.7K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">1.2M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/119047980168693/Cook-in-a-Lab" target="_blank" rel="noopener" class="game">
+      <div class="game-num">10</div>
+      <div class="game-title">Cook in a <span class="italic">Lab</span></div>
+      <div><div class="game-stat-num">2K+</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">6.1M+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">LiveOps<br>Spiral Games</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/96043440721025/Blade-Simulator" target="_blank" rel="noopener" class="game">
+      <div class="game-num">11</div>
+      <div class="game-title">Blade <span class="italic">Simulator</span></div>
+      <div><div class="game-stat-num">—</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">—</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+
+    <a href="https://www.roblox.com/games/110577480099367/Build-Ladder-For-Brainrots" target="_blank" rel="noopener" class="game">
+      <div class="game-num">12</div>
+      <div class="game-title">Build a Ladder For <span class="italic">Brainrots</span></div>
+      <div><div class="game-stat-num">638</div><div class="game-stat-label">Peak CCU</div></div>
+      <div><div class="game-stat-num">180K+</div><div class="game-stat-label">Visits</div></div>
+      <div class="game-role">Game Director<br>BlockTurns</div>
+      <div class="game-arrow">↗</div>
+    </a>
+  </div>
+</section>
+
+<!-- IMPACT -->
+<section class="section">
+  <div class="section-header">
+    <div class="section-num">02 / IMPACT</div>
+    <h2 class="section-title">Revenue <span class="italic">work</span></h2>
+    <div class="section-meta">LiveOps / Monetisation</div>
+  </div>
+
+  <div class="liveops-hero">
+    <div class="liveops-big">
+      <span class="count" data-target="10" data-suffix="">0</span><span class="italic">×</span><sup>rev</sup>
+    </div>
+    <div class="liveops-desc">
+      <strong>From 20K/day to 200K+/day</strong>
+      One title. One monetisation overhaul. Gamepass pricing rebuilt from scratch, devproduct funnels restructured around proven spending triggers, and paywall placement moved to match the actual player motivation curve. This is what happens when you treat monetisation as game design, not as pricing.
+    </div>
+  </div>
+
+  <div class="liveops-hero">
+    <div class="liveops-big">
+      <span class="count" data-target="162" data-suffix="">0</span><span class="italic">M</span><sup>+</sup>
+    </div>
+    <div class="liveops-desc">
+      <strong>Total visits across directed games</strong>
+      Thumbnail iteration every week with CubeGraphics, driving millions of impressions per cycle. Balancing spreadsheets. Update cadence discipline. What's Next planning locked before the current update even ships.
+    </div>
+  </div>
+</section>
+
+<!-- AUDIT SECTION -->
+<section class="section" id="audit">
+  <div class="section-header">
+    <div class="section-num">03 / SERVICE</div>
+    <h2 class="section-title">Game <span class="italic">audit</span></h2>
+    <div class="section-meta">For Roblox Devs</div>
+  </div>
+
+  <div class="audit">
+    <div class="audit-grid">
+      <div>
+        <div class="audit-badge">Slots open this week</div>
+        <h3 class="audit-title">Your game. My <span class="italic">eyes.</span></h3>
+        <p class="audit-desc">
+          Send me your game and I review it end to end. Core loop, monetisation, retention, thumbnails, first session, paywalls. Same lens I use on 162M+ visit titles. You get a written report with ranked priorities and exact changes to ship next.
+        </p>
+        <a href="https://discord.com/invite/qptr" target="_blank" rel="noopener" class="audit-cta">
+          Book an Audit <span>→</span>
+        </a>
+      </div>
+
+      <div class="audit-price">
+        <div class="audit-price-tag">Flat rate</div>
+        <div class="audit-price-main">
+          <img class="audit-price-robux" src="robux.svg" alt="Robux">
+          <div class="audit-price-num"><span class="count" data-target="10" data-suffix="K">0</span></div>
+        </div>
+        <div class="audit-price-alt">or <strong>$38 USD</strong> equiv.</div>
+        <div class="audit-price-sub">
+          <strong>72h turnaround</strong>
+          Delivered as a Google Doc with loom walkthrough
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="section" id="reviews">
+  <div class="section-header">
+    <div class="section-num">04 / REVIEWS</div>
+    <h2 class="section-title">What devs <span class="italic">say</span></h2>
+    <div class="section-meta">From teams I've worked with</div>
+  </div>
+
+  <div class="reviews-grid">
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">Platinum flagged three paywall issues in our core loop I had been missing for weeks. First update after his audit doubled our day-1 retention.</div>
+      <div class="review-author">
+        <strong>Scripter, BlockTurns</strong>
+        <span>Game Director Audit</span>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">The balancing spreadsheet he built for Aura Ascension is the most thorough thing I've seen on Roblox. Zone overrides fixed, pacing smoothed, numbers that actually hold.</div>
+      <div class="review-author">
+        <strong>Dev Team Lead</strong>
+        <span>BlockTurns</span>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">Took Dinosaur Racing from 20K daily revenue to 200K+ in weeks. Pricing logic, funnel rebuild, trigger placement. He treats monetisation like game design, not like pricing.</div>
+      <div class="review-author">
+        <strong>Chronix</strong>
+        <span>LiveOps Engagement</span>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">Guest speaking at our Builder Pathway was a win for the students. Straight game design talk, zero fluff, actual examples from games currently earning. Booking him again next cohort.</div>
+      <div class="review-author">
+        <strong>Gamr Lab Lagos</strong>
+        <span>Program Lead</span>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">Thumbnail reworks every single week with measurable impression lift. He understands that creative is a KPI lever, not a vibe exercise.</div>
+      <div class="review-author">
+        <strong>CubeGraphics</strong>
+        <span>Creative Partner</span>
+      </div>
+    </div>
+
+    <div class="review">
+      <div class="review-stars">★ ★ ★ ★ ★</div>
+      <div class="review-quote">Hired him for a quick game audit and walked out with a 4-page doc of fixes ranked by impact. Shipped the top three inside a week. Money well spent.</div>
+      <div class="review-author">
+        <strong>Indie Dev</strong>
+        <span>Audit Client</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISCIPLINE -->
+<section class="section">
+  <div class="section-header">
+    <div class="section-num">05 / DISCIPLINE</div>
+    <h2 class="section-title">What I <span class="italic">direct</span></h2>
+    <div class="section-meta">End-to-End</div>
+  </div>
+
+  <div class="about-grid">
+    <div class="skill-block">
+      <div class="skill-num">01<span class="italic">.</span></div>
+      <div class="skill-title">Game Direction</div>
+      <div class="skill-desc">Update planning, task management, team coordination, feature prioritisation. Every cycle has a locked scope and a confirmed What's Next before launch.</div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-num">02<span class="italic">.</span></div>
+      <div class="skill-title">LiveOps + Monetisation</div>
+      <div class="skill-desc">Revenue optimisation, gamepass and devproduct strategy, KPI analysis, retention loops. Monetisation decisions tied to player motivation, not to price tables.</div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-num">03<span class="italic">.</span></div>
+      <div class="skill-title">Creative + Growth</div>
+      <div class="skill-desc">Thumbnail design, impression farming, game balancing, player psychology. Weekly iteration with CubeGraphics on every title.</div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-num">04<span class="italic">.</span></div>
+      <div class="skill-title">Team Leadership</div>
+      <div class="skill-desc">Leading scripters, modellers, UI designers, builders, VFX artists, and animators across multiple simultaneous projects. Pipeline discipline, on-time delivery.</div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-num">05<span class="italic">.</span></div>
+      <div class="skill-title">Analytics + KPI</div>
+      <div class="skill-desc">Session metrics, retention curves, revenue breakdowns. Pro account on ccucheck.com. Reading dashboards is half the job. Acting on them is the other half.</div>
+    </div>
+    <div class="skill-block">
+      <div class="skill-num">06<span class="italic">.</span></div>
+      <div class="skill-title">Game Balancing</div>
+      <div class="skill-desc">Full balancing spreadsheets covering progression, rebirth economies, zone multipliers, stacking logic. Fixed the zone override issue on Aura Ascension.</div>
+    </div>
+  </div>
+
+  <div class="addl">
+    <a href="https://discord.com/invite/qptr" target="_blank" rel="noopener" class="addl-block clickable">
+      <div class="addl-title">RTG DEVS</div>
+      <div class="addl-link">discord.gg/qptr</div>
+      <div class="addl-desc">Roblox developer marketplace and mentorship community. 1,000+ members. Connects developers with studios, structured mentorship for aspiring creators.</div>
+    </a>
+
+    <a href="https://www.gamr.africa/" target="_blank" rel="noopener" class="addl-block clickable">
+      <div class="addl-title">Gamr Lab Lagos</div>
+      <div class="addl-link">gamr.africa</div>
+      <div class="addl-desc">Guest speaker for the Roblox Builder Pathway. Produced course deck, orientation, facilitator scripts, and student grading for the pilot program.</div>
+    </a>
+
+    <div class="addl-block">
+      <div class="addl-title">RuleTheGlobe</div>
+      <div class="addl-link">Three-branch digital co.</div>
+      <div class="addl-desc">RTG Agency (AI-powered content marketing, SEO), QUATR (Discord education), RTG DEVS (developer marketplace). Operating out of Lagos.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-big">
+    Let's build<br>the <span class="italic">next</span> one.
+  </div>
+
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h4>Direct</h4>
+      <a href="https://x.com/pl4tinumeffects" target="_blank" rel="noopener">Twitter / X ↗</a>
+      <a href="https://www.roblox.com/users/1627755158/profile" target="_blank" rel="noopener">Roblox ↗</a>
+      <a href="https://discord.com/invite/qptr" target="_blank" rel="noopener">Discord ↗</a>
+    </div>
+    <div class="footer-col">
+      <h4>Business</h4>
+      <span>RuleTheGlobe</span>
+      <a href="https://discord.com/invite/qptr" target="_blank" rel="noopener">RTG DEVS ↗</a>
+      <span>RTG Agency</span>
+    </div>
+    <div class="footer-col">
+      <h4>Location</h4>
+      <span>Lagos, NG</span>
+      <span>GMT+1</span>
+    </div>
+    <div class="footer-col">
+      <h4>Status</h4>
+      <span style="color: #0eff8e;">● Available</span>
+      <a href="#audit">Book audit ↗</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 PLATINUMFX</div>
+    <div>Roblox Game Director</div>
+    <div>Built in Lagos</div>
+  </div>
+</footer>
+
+<script>
+  // Availability toggle
+  const availabilityToggle = document.getElementById('availabilityToggle');
+  const navDot = document.getElementById('navDot');
+  const navStatusText = document.getElementById('navStatusText');
+
+  function setAvailability(isBusy) {
+    if (!availabilityToggle) return;
+    if (isBusy) {
+      availabilityToggle.classList.add('busy');
+      availabilityToggle.querySelector('.availability-status').textContent = 'BUSY';
+      if (navDot) navDot.classList.add('busy');
+      if (navStatusText) navStatusText.textContent = 'BOOKED OUT';
+    } else {
+      availabilityToggle.classList.remove('busy');
+      availabilityToggle.querySelector('.availability-status').textContent = 'AVAILABLE';
+      if (navDot) navDot.classList.remove('busy');
+      if (navStatusText) navStatusText.textContent = 'TAKING AUDITS';
+    }
+    try { localStorage.setItem('rtgAvailability', isBusy ? 'busy' : 'available'); } catch(e) {}
+  }
+
+  if (availabilityToggle) {
+    try {
+      const saved = localStorage.getItem('rtgAvailability');
+      if (saved === 'busy') setAvailability(true);
+    } catch(e) {}
+
+    availabilityToggle.addEventListener('click', () => {
+      const isBusy = availabilityToggle.classList.contains('busy');
+      setAvailability(!isBusy);
+    });
+    availabilityToggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        availabilityToggle.click();
+      }
+    });
+  }
+
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  if (window.innerWidth > 900) {
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, .game, .featured-card, .collab-cell, .review, button, .audit-cta, .availability-toggle').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+    });
+  }
+
+  // Count-up animation
+  function animateCount(el) {
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const decimals = parseInt(el.dataset.decimal) || 0;
+    const duration = 2000;
+    const start = performance.now();
+
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutExpo
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      const current = target * eased;
+      el.textContent = (decimals > 0 ? current.toFixed(decimals) : Math.floor(current)) + suffix;
+      if (progress < 1) requestAnimationFrame(update);
+      else el.textContent = (decimals > 0 ? target.toFixed(decimals) : target) + suffix;
+    }
+    requestAnimationFrame(update);
+  }
+
+  const countObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.dataset.counted) {
+        entry.target.dataset.counted = 'true';
+        animateCount(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.count').forEach(el => countObserver.observe(el));
+
+  // Section reveal
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.section, .featured-card, .game, .review, .collab-cell').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+    revealObserver.observe(el);
+  });
+</script>
+
+</body>
+</html>
